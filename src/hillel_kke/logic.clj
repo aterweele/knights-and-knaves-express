@@ -301,13 +301,4 @@
          [(fresh [before]
             (subseqᵒ path [before 'c])
             (== raymond before))])])
-      ;; assuming for now that the rest is fluff. But, both A and B
-      ;; claim that Raymond smells bad, so maybe there needs to be a
-      ;; constraint that they're either both knights or both knaves.
-      
-
-      ;; necessary?
-      (fresh [n-knaves]
-        (fd/in n-knaves (fd/interval 0 3))
-        (n-knavesᵒ n-knaves roles))
       (== assignment station->role)))))
