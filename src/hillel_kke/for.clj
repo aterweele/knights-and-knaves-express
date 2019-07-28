@@ -67,11 +67,10 @@
         stations {'a (fn [me path assignment]
                        (let [me-knight (knight? assignment me)
                              me-assignment (assignment me)
-                             before-me-assignment
-                             (->> (index-of me path)
-                                  dec
-                                  (get path)
-                                  assignment)]
+                             before-me-assignment (assignment
+                                                   (nth path
+                                                        (dec (index-of me path))
+                                                        nil))]
                          (or (and me-knight
                                   (= before-me-assignment :knave))
                              (and (not me-knight)
