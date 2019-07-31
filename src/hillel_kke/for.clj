@@ -1,4 +1,9 @@
 (ns hillel-kke.for
+  "Brute-force \"vanilla\"-Clojure solutions.
+
+  The name of the namespace refers to the fact that the
+  solution-searching in this namespace is done via a single
+  for-comprehension per problem."
   (:require [clojure.set :as set]))
 
 (defn across [vertex edge] (first (disj edge vertex)))
@@ -63,48 +68,37 @@
                    (->> xs
                         (map-indexed (fn [i x] [i x]))
                         (some (fn [[i x']] (when (= x x') i)))))
-        knight? (fn [assignment station] (= :knight (assignment station)))
-        stations {'a (fn [me path assignment]
-                       (let [me-knight (knight? assignment me)
-                             me-assignment (assignment me)
-                             before-me-assignment (assignment
-                                                   (nth path
-                                                        (dec (index-of me path))
-                                                        nil))]
-                         (or (and me-knight
-                                  (= before-me-assignment :knave))
-                             (and (not me-knight)
-                                  (not= before-me-assignment :knave)))))
-                  'b (fn [me path assignment]
-                       (let [me-knight (knight? assignment me)
-                             me-index (index-of me path)
-                             a-b (< (index-of 'a path) me-index)
-                             b-c (< me-index (index-of 'c path))]
-                         (or (and me-knight a-b b-c)
-                             (and (not me-knight)
-                                  ;; assume every statement leaves the
-                                  ;; world consistent. Then, it is
-                                  ;; only necessary for B's first
-                                  ;; statement to be false.
-                                  #_(not a-b)
-                                  ;; per "knaves always lie", both
-                                  ;; statements must be false.
-                                  (not a-b) (not b-c)))))
-                  'c (fn [me path assignment]
-                       (= (knight? assignment me)
-                          (->> path
-                               (map assignment)
-                               (partition 2 1)
-                               (some (partial = [:knight :knight]))
-                               boolean)))
-                  'd (fn [me path assignment]
-                       (= (knight? assignment me)
-                          (let [me-index (index-of me path)]
-                            (and (< (index-of 'a path) me-index)
-                                 (< (index-of 'b path) me-index)))))}
+        stations {'a (fn [path assignment]
+                       (= :knave
+                          (assignment
+                           (nth path
+                                (dec (index-of 'a path))
+                                nil))))
+                  'b (fn [path assignment]
+                       ;; once again, this is the unsophisticated
+                       ;; interpretation, where B-the-knave only has
+                       ;; to make one lie (and not even the first
+                       ;; statement has to be a lie!). But, it seems
+                       ;; to work? TODO: prove manually that this
+                       ;; assumption is sufficient.
+                       (< (index-of 'a path)
+                          (index-of 'b path)
+                          (index-of 'c path)))
+                  'c (fn [path assignment]
+                       (->> path
+                            (map assignment)
+                            (partition 2 1)
+                            (some (partial = [:knight :knight]))))
+                  'd (fn [path assignment]
+                       (let [d-index (index-of 'd path)]
+                         (and (< (index-of 'a path) d-index)
+                              (< (index-of 'b path) d-index))))}
         n-knaves 2]
     (for [path (hamiltonian-paths graph)
           assignment (assignments n-knaves vertices)
-          :when (every? (fn [[s f]] (f s path assignment)) stations)]
+          :when (every? (fn [[s f]]
+                          (= (= :knight (assignment s))
+                             (boolean (f path assignment))))
+                        stations)]
       {:path path
        :assignment assignment})))
