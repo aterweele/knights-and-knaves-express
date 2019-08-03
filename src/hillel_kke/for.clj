@@ -29,27 +29,6 @@
           (for [v vertices]
             (hamiltonian-paths-from v graph)))))
 
-(def problem-1
-  (let [graph '[#{a b} #{#{a b}}]
-        stations {'a (fn [me path] (= me (first path)))
-                  'b (fn [me path] (= me (last path)))}
-        satisfactory-knave-count? #{1 2}]
-    (for [path (hamiltonian-paths graph)
-          :let [assignment (into {}
-                                 (map (fn [v] [v ((get stations v) v path)]))
-                                 path)
-                {knights true, knaves false} (group-by
-                                              (fn [v]
-                                                ((get stations v) v path))
-                                              path)]
-          :when (->> assignment
-                     ;; select knaves
-                     (remove val)
-                     count
-                     satisfactory-knave-count?)]
-      {:path path
-       :assignment assignment})))
-
 (defn assignments
   "Every assignment for `stations` of `n` knaves."
   [n stations]
@@ -61,6 +40,21 @@
         (lazy-cat (map #(assoc % h :knave) (assignments (dec n) t))
                   (map #(assoc % h :knight) (assignments n t)))
         [{}]))))
+
+(def problem-1
+  (let [[vertices :as graph] '[#{a b} #{#{a b}}]
+        stations {'a (fn [path] (= 'a (first path)))
+                  'b (fn [path] (= 'b (last path)))}
+        possible-knave-counts #{1 2}]
+    (for [path (hamiltonian-paths graph)
+          n-knaves possible-knave-counts
+          assignment (assignments n-knaves vertices)
+          :when (every? (fn [[s f]]
+                          (= (= :knight (assignment s))
+                             (boolean (f path))))
+                        stations)]
+      {:path path
+       :assignment assignment})))
 
 (def problem-2
   (let [[vertices :as graph] '[#{a b c d} #{#{a b} #{b c} #{c d} #{d a}}]
