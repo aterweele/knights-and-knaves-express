@@ -96,3 +96,39 @@
                         stations)]
       {:path path
        :assignment assignment})))
+
+(def problem-3
+  (let [[vertices :as graph] '[#{a b c} #{#{a b} #{b c} #{c a}}]
+        index-of (fn [x xs]
+                   (->> xs
+                        (map-indexed (fn [i x] [i x]))
+                        (some (fn [[i x']] (when (= x x') i)))))
+        stations {'a (fn [path assignment raymond stinky]
+                       [(not= (dec (index-of 'a path))
+                              (index-of raymond path))
+                        (= :knave (assignment raymond))
+                        stinky])
+                  'b (fn [path assignment raymond stinky]
+                       [(not= (inc (index-of 'b path))
+                              (index-of raymond path))
+                        stinky])
+                  'c (fn [path assignment raymond _]
+                       (let [raymond-index (index-of raymond path)]
+                         [(not (#{(inc raymond-index) (dec raymond-index)}
+                                 (index-of 'c path)))]))}]
+    (for [path (hamiltonian-paths graph)
+          n-knaves (range 4)
+          assignment (assignments n-knaves vertices)
+          raymond vertices
+          stinky #{true false}
+          :when (every? (fn [[s f]]
+                          ((if (= :knight (assignment s))
+                             every?
+                             not-any?)
+                           boolean
+                           (f path assignment raymond stinky)))
+                        stations)]
+      {:path path
+       :assignment assignment
+       :raymond raymond
+       :stinky stinky})))
